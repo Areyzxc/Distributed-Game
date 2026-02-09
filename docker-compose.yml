@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: game-postgres
+    environment:
+      POSTGRES_USER: gameadmin
+      POSTGRES_PASSWORD: SecurePassword123!
+      POSTGRES_DB: game_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gameadmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - game-network
+
+volumes:
+  postgres_data:
+
+networks:
+  game-network:
+    driver: bridge

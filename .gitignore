@@ -1,0 +1,102 @@
+# C# / .NET
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+*.user
+*.suo
+.vs/
+.vscode/
+*.csproj.user
+appsettings.Development.json
+
+# Entity Framework Migrations (keep migrations folder, ignore compiled files)
+Migrations/*.cs.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.env
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Node.js / Next.js
+node_modules/
+.next/
+out/
+.nuxt/
+dist/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dashboard/.git/
+
+# Rust / WebAssembly
+target/
+Cargo.lock
+*.wasm
+pkg/
+.cargo/
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# IDE
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Secrets
+.env
+secrets.json
+appsettings.Production.json
+
+# Build output
+publish/
+PublishProfiles/
+
+# Unity (for game-client when created)
+game-client/Library/
+game-client/Logs/
+game-client/UserSettings/
+game-client/Assets/Plugins/
+game-client/*.csproj
+game-client/*.sln
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*~

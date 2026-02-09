@@ -1,0 +1,400 @@
+# Distributed Game System - Complete Implementation Plan
+**Status: PHASE 1 - PROJECT INITIALIZATION COMPLETE**
+**Database: PostgreSQL (Vector-Enabled)**
+**Last Updated: January 21, 2026**
+
+---
+
+## Current Project Status ✅
+
+### Initialized Modules
+1. ✅ **GameServer** (ASP.NET Core 8.0 + SignalR) - Ready for Phase 1 development
+2. 📁 **game-client** (Unity) - Ready for Phase 2 setup
+3. ✅ **dashboard** (Next.js 14) - Ready for Phase 4a development
+4. ✅ **RustWasm** (Rust 1.92) - Ready for Phase 4b development
+5. ✅ **AiService** (Python 3.13 + Flask) - Ready for Phase 3 development
+
+### Technology Stack Confirmed
+- **C#**: ASP.NET Core 8.0 + SignalR (GameServer), C# + Unity (game-client)
+- **Python**: 3.13.9 + Flask + TensorFlow (AiService)
+- **TypeScript/JavaScript**: Next.js 14 + React (dashboard)
+- **Rust**: 1.92 + wasm-bindgen (RustWasm → WebAssembly)
+- **Database**: PostgreSQL 14+ (with pgvector extension for AI)
+
+---
+
+## GameClient Setup Instructions
+Since you have the Unity Hub .exe, here is your specific roadmap to initialize the GameClient and match the PROJECT_STRUCTURE.md plan.
+
+Step 1: Install the Engine (The Foundation)
+Run the .exe: Install Unity Hub.
+
+Install Editor: Inside Unity Hub, go to Installs > Install Editor.
+
+Version: Select Unity 2022 LTS (Long Term Support) as recommended in your report.
+
+Why: LTS versions are stable for long projects like Capstones.
+
+Modules: Ensure "Microsoft Visual Studio Community 2022" is checked (for C# editing) and "Windows Build Support (IL2CPP)" is checked.
+
+Step 2: Create the Project (The Initialization)
+This step is critical to make sure it lands in your existing distributed-game-system folder.
+
+Open Unity Hub.
+
+Click New Project.
+
+Template: Select 3D (URP) (Universal Render Pipeline).
+
+Note: Your setup report specifies URP. This looks better and runs faster than standard 3D.
+
+Project Name: GameClient (matches your folder structure).
+
+Location: Browse to your root folder: c:\xampp\htdocs\distributed-game-system\.
+
+Important: Unity will create a folder named GameClient inside that location. If you already created an empty GameClient folder manually, you might need to select the parent folder or delete the empty one first so Unity can create it fresh.
+
+Step 3: Match the Folder Structure (The Organization)
+Once Unity opens (it takes a few minutes), you need to create the folders defined in your PROJECT_STRUCTURE.md.
+
+In the Project Window (bottom), right-click Assets and create this exact structure:
+
+_Scripts (or just Scripts)
+
+Networking (For SignalR code)
+
+Player (For movement/stats)
+
+Gameplay (For coins/score)
+
+UI (For health/score display)
+
+Auth (For JWT handling)
+
+Prefabs
+
+Scenes (Move the default scene here and rename it MainGame)
+
+Step 4: Install the SignalR Dependency
+Your Unity client needs to talk to the ASP.NET Server. Unity doesn't have SignalR by default.
+
+Inside Unity, download the Microsoft.AspNetCore.SignalR.Client DLLs.
+
+The Easiest Way: You can usually use NuGet for Unity, or download the DLLs manually from nuget.org and drop them into a folder named Assets/Plugins.
+
+Verify: You should be able to create a C# script and type using Microsoft.AspNetCore.SignalR.Client; without errors.
+
+---
+
+## PostgreSQL Database Architecture ✅
+
+### Why PostgreSQL (Not SQLite)
+
+**Problem with SQLite in Distributed Systems:**
+- ❌ File-based locking causes crashes when C# and Python write simultaneously
+- ❌ Cannot deploy to cloud containers (file deleted on redeploy)
+- ❌ No built-in support for vector similarity search
+- ❌ Poor concurrency for 1000+ concurrent players
+
+**PostgreSQL Advantages:**
+- ✅ **Concurrency**: Handles thousands of reads/writes from C#, Python, Node.js without locking
+- ✅ **pgvector Extension**: AI superpower for detecting similar cheating patterns
+- ✅ **Cloud-Ready**: Works perfectly with Docker and Azure/AWS deployment
+- ✅ **Network Access**: Multiple services can connect simultaneously
+- ✅ **JSON Support**: Store complex game data (player stats, inventory, game events)
+- ✅ **Full-Text Search**: Find players by username, ban reasons, etc.
+
+### PostgreSQL with pgvector (The AI Magic)
+
+**Scenario**: Your TensorFlow AI detects a cheater's movement pattern and saves it as a vector.
+
+```sql
+-- Store cheater's movement pattern as vector
+INSERT INTO movement_patterns (player_id, pattern_vector, created_at)
+VALUES ('player_123', '[0.1, 0.2, 0.3, ... 768 dimensions]', NOW());
+
+-- Later: Find ALL other players with similar suspicious movement
+SELECT player_id, 1 - (pattern_vector <=> suspicious_pattern) as similarity
+FROM movement_patterns
+WHERE 1 - (pattern_vector <=> suspicious_pattern) > 0.85
+ORDER BY similarity DESC;
+```
+
+**Result**: Detect cheater networks automatically. You cannot do this with MySQL or SQL Server.
+
+---
+
+## PostgreSQL + GameServer Setup Instructions
+
+### Step 1: Install Docker Desktop (Recommended)
+**Why Docker?** Keeps PostgreSQL isolated from your Windows system. Easy to start/stop.
+
+1. Download: https://www.docker.com/products/docker-desktop
+2. Install and restart your computer
+3. Verify: `docker --version` in PowerShell
+
+### Step 2: Launch PostgreSQL in Docker
+
+**Option A: Docker Compose (Recommended - Easiest)**
+
+Create `docker-compose.yml` in root of `distributed-game-system`:
+
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: pgvector/pgvector:pg16-latest
+    environment:
+      POSTGRES_USER: gameadmin
+      POSTGRES_PASSWORD: SecurePassword123!
+      POSTGRES_DB: game_system
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gameadmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+**Run it:**
+```powershell
+cd c:\xampp\htdocs\distributed-game-system
+docker-compose up -d
+# PostgreSQL runs on localhost:5432
+```
+
+**Option B: Docker Command (If no compose)**
+```powershell
+docker run -d `
+  --name game-postgres `
+  -e POSTGRES_USER=gameadmin `
+  -e POSTGRES_PASSWORD=SecurePassword123! `
+  -e POSTGRES_DB=game_system `
+  -p 5432:5432 `
+  -v postgres_data:/var/lib/postgresql/data `
+  pgvector/pgvector:pg16-latest
+```
+
+**Option C: PostgreSQL Installer (Windows Only - Not Recommended)**
+Download from: https://www.postgresql.org/download/windows/
+- More complex setup
+- pgvector requires manual installation
+- Not ideal for containers
+
+### Step 3: Add PostgreSQL to GameServer
+
+```powershell
+cd c:\xampp\htdocs\distributed-game-system\GameServer\GameServer
+
+# Install EF Core + PostgreSQL driver
+dotnet add package Microsoft.EntityFrameworkCore
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
+dotnet add package Microsoft.EntityFrameworkCore.Design
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+```
+
+### Step 4: Update appsettings.json
+
+In `GameServer/GameServer/appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=game_system;Username=gameadmin;Password=SecurePassword123!"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information"
+    }
+  },
+  "AllowedHosts": "*",
+  "SignalR": {
+    "HubUrl": "https://localhost:5001/gamehub"
+  }
+}
+```
+
+### Step 5: Create DbContext
+
+Create `GameServer/GameServer/Data/GameDbContext.cs`:
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+
+namespace GameServer.Data
+{
+    public class GameDbContext : DbContext
+    {
+        public GameDbContext(DbContextOptions<GameDbContext> options) : base(options) { }
+
+        public DbSet<Player> Players { get; set; }
+        public DbSet<GameScore> Scores { get; set; }
+        public DbSet<BannedPlayer> BannedPlayers { get; set; }
+        public DbSet<MovementPattern> MovementPatterns { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            
+            // pgvector column for AI pattern matching
+            modelBuilder.Entity<MovementPattern>()
+                .Property(m => m.PatternVector)
+                .HasColumnType("vector(768)");
+        }
+    }
+}
+```
+
+### Step 6: Create Entity Models
+
+Create files in `GameServer/GameServer/Models/`:
+
+**Player.cs**
+```csharp
+public class Player
+{
+    public Guid Id { get; set; }
+    public string Username { get; set; }
+    public string Email { get; set; }
+    public string PasswordHash { get; set; }
+    public int TotalScore { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime LastLoginAt { get; set; }
+    public bool IsActive { get; set; }
+}
+```
+
+**GameScore.cs**
+```csharp
+public class GameScore
+{
+    public Guid Id { get; set; }
+    public Guid PlayerId { get; set; }
+    public int Score { get; set; }
+    public DateTime RecordedAt { get; set; }
+    public Player Player { get; set; }
+}
+```
+
+**BannedPlayer.cs**
+```csharp
+public class BannedPlayer
+{
+    public Guid Id { get; set; }
+    public Guid PlayerId { get; set; }
+    public string Reason { get; set; }
+    public DateTime BannedAt { get; set; }
+    public DateTime? UnbanAt { get; set; }
+    public Player Player { get; set; }
+}
+```
+
+**MovementPattern.cs** (For AI Vector Search)
+```csharp
+using Pgvector;
+
+public class MovementPattern
+{
+    public Guid Id { get; set; }
+    public Guid PlayerId { get; set; }
+    public Vector PatternVector { get; set; } // 768-dimensional vector from TensorFlow
+    public double CheatProbability { get; set; }
+    public DateTime DetectedAt { get; set; }
+    public Player Player { get; set; }
+}
+```
+
+### Step 7: Configure Dependency Injection in Program.cs
+
+```csharp
+// Add this to Program.cs after var builder = WebApplicationBuilder.CreateBuilder(args);
+
+builder.Services.AddDbContext<GameDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add SignalR
+builder.Services.AddSignalR();
+
+// ... rest of configuration
+```
+
+### Step 8: Create Migrations
+
+```powershell
+cd c:\xampp\htdocs\distributed-game-system\GameServer\GameServer
+
+# Create initial migration
+dotnet ef migrations add InitialCreate
+
+# Apply to database
+dotnet ef database update
+```
+
+Verify in PostgreSQL:
+```powershell
+# Connect to database
+psql -h localhost -U gameadmin -d game_system
+
+# List tables
+\dt
+
+# Verify pgvector column
+\d movement_patterns
+```
+
+---
+
+## Next Action Steps (Development Roadmap)
+
+### Week 1-2: GameServer Setup ⭐ **START HERE**
+- [ ] **DONE**: Project initialized
+- [ ] **TODO**: Add SignalR Hub (`GameHub.cs`)
+- [ ] **TODO**: Add JWT Authentication
+- [ ] **TODO**: Create Player/Score/Ban models ✅ (templates above)
+- [ ] **TODO**: Create database migrations ✅ (template above)
+- [ ] **TODO**: Create TensorFlow HTTP client for Python service
+- [ ] **TODO**: Implement `/api/auth/login` endpoint
+- [ ] **TODO**: Implement `/api/auth/register` endpoint
+- [ ] **TODO**: Write unit tests
+
+### Week 2-3: GameClient Setup (Unity)
+- [ ] Install Unity Hub (download .exe)
+- [ ] Install Unity 2022 LTS
+- [ ] Create 3D project in `game-client` folder
+- [ ] Create folder structure (Scripts, Prefabs, Scenes, etc.)
+- [ ] Install SignalR NuGet package
+- [ ] Create player controller
+- [ ] Implement score sending to server
+
+### Week 3-4: AiService Setup (Python)
+- [ ] Activate Python venv
+- [ ] Install TensorFlow + dependencies
+- [ ] Create anti-cheat ML model
+- [ ] Implement `/validate_move` endpoint
+- [ ] Implement `/detect_cheat` endpoint
+- [ ] Test with mock data
+
+### Week 4-5: Dashboard Setup (Next.js)
+- [ ] Install SignalR JavaScript client
+- [ ] Create real-time components
+- [ ] Integrate Rust heatmap
+- [ ] Build leaderboard page
+- [ ] Build player stats page
+
+### Week 5-6: RustWasm Setup
+- [ ] Implement heatmap calculation algorithm
+- [ ] Compile to WebAssembly
+- [ ] Create JavaScript bindings
+- [ ] Test in dashboard
+
+### Week 6+: Integration & Deployment
+- [ ] Full-stack testing
+- [ ] Deploy to Azure/AWS with Docker
+- [ ] Load testing (k6)
+- [ ] Monitoring setup (Prometheus + Grafana)
