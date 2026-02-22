@@ -284,7 +284,7 @@ namespace GameServer.Hubs
         public async Task<int> GetActiveSessions()
         {
             _logger.LogInformation($"Active sessions request from {Context.ConnectionId}");
-            
+
             // Count active players connected to the server
             var activePlayers = await _context.Players.CountAsync(p => p.IsActive);
             return activePlayers;
