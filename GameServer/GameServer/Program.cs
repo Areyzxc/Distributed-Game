@@ -1,4 +1,5 @@
 using GameServer.Data;
+using GameServer.Hubs;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -50,6 +51,9 @@ app.MapGet("/api/players", async (GameDbContext db) =>
     await db.Players.ToListAsync())
     .WithName("GetPlayers")
     .WithOpenApi();
+
+// SignalR GameHub for real-time communication
+app.MapHub<GameHub>("/gamehub");
 
 app.Run();
 
